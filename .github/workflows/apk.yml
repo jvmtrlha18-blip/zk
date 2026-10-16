@@ -1,1 +1,594 @@
- name: Criar APK NavegaClean S20  on:   workflow_dispatch:   push:     branches: [main]  jobs:   compilar:     runs-on: ubuntu-latest      steps:       - name: Preparar repositorio         uses: actions/checkout@v4        - name: Instalar Java 17         uses: actions/setup-java@v4         with:           distribution: temurin           java-version: '17'        - name: Instalar Android SDK         uses: android-actions/setup-android@v3        - name: Instalar Gradle         uses: gradle/actions/setup-gradle@v4         with:           gradle-version: '8.7'        - name: Criar aplicativo Android         shell: bash         run: |           mkdir -p app/src/main/java/com/navegaclean/s20            cat > settings.gradle <<'EOF'           pluginManagement {               repositories {                   google()                   mavenCentral()                   gradlePluginPortal()               }           }           dependencyResolutionManagement {               repositories {                   google()                   mavenCentral()               }           }           rootProject.name = 'NavegaCleanS20'           include ':app'           EOF            cat > build.gradle <<'EOF'           plugins {               id 'com.android.application' version '8.6.1' apply false           }           EOF            cat > app/build.gradle <<'EOF'           plugins {               id 'com.android.application'           }            android {               namespace 'com.navegaclean.s20'               compileSdk 35                defaultConfig {                   applicationId 'com.navegaclean.s20'                   minSdk 29                   targetSdk 35                   versionCode 1                   versionName '1.0'               }                compileOptions {                   sourceCompatibility JavaVersion.VERSION_17                   targetCompatibility JavaVersion.VERSION_17               }           }           EOF            cat > app/src/main/AndroidManifest.xml <<'EOF'           <?xml version="1.0" encoding="utf-8"?>           <manifest xmlns:android="http://schemas.android.com/apk/res/android">                <queries>                   <intent>                       <action android:name="android.intent.action.VIEW"/>                       <category android:name="android.intent.category.BROWSABLE"/>                       <data android:scheme="https"/>                   </intent>                    <package android:name="com.android.chrome"/>                   <package android:name="org.mozilla.firefox"/>                   <package android:name="org.mozilla.focus"/>                   <package android:name="com.brave.browser"/>                   <package android:name="com.microsoft.emmx"/>                   <package android:name="com.opera.browser"/>                   <package android:name="com.opera.mini.native"/>                   <package android:name="com.vivaldi.browser"/>                   <package android:name="com.duckduckgo.mobile.android"/>                   <package android:name="com.kiwibrowser.browser"/>                   <package android:name="org.torproject.torbrowser"/>                   <package android:name="com.yandex.browser"/>               </queries>                <application                   android:label="NavegaClean S20"                   android:allowBackup="false"                   android:theme="@android:style/Theme.Material.NoActionBar">                    <activity                       android:name=".MainActivity"                       android:exported="true">                        <intent-filter>                           <action android:name="android.intent.action.MAIN"/>                           <category android:name="android.intent.category.LAUNCHER"/>                       </intent-filter>                   </activity>               </application>           </manifest>           EOF            cat > app/src/main/java/com/navegaclean/s20/MainActivity.java <<'EOF'           package com.navegaclean.s20;            import android.app.Activity;           import android.os.Bundle;           import android.content.Intent;           import android.content.pm.*;           import android.graphics.Color;           import android.graphics.Typeface;           import android.graphics.drawable.GradientDrawable;           import android.net.Uri;           import android.provider.Settings;           import android.view.View;           import android.widget.*;           import java.util.*;            public class MainActivity extends Activity {                final int BG = Color.rgb(10, 17, 24);               final int PANEL = Color.rgb(23, 34, 45);               final int GREEN = Color.rgb(49, 219, 157);               final int WHITE = Color.WHITE;               final int MUTED = Color.rgb(166, 182, 194);                final String[] known = {                   "com.android.chrome",                   "org.mozilla.firefox",                   "org.mozilla.focus",                   "com.brave.browser",                   "com.microsoft.emmx",                   "com.opera.browser",                   "com.opera.mini.native",                   "com.vivaldi.browser",                   "com.duckduckgo.mobile.android",                   "com.kiwibrowser.browser",                   "org.torproject.torbrowser",                   "com.yandex.browser"               };                static class Browser {                   String name;                   String pkg;                   String kind;                    Browser(String name, String pkg, String kind) {                       this.name = name;                       this.pkg = pkg;                       this.kind = kind;                   }               }                @Override               public void onCreate(Bundle b) {                   super.onCreate(b);                   getWindow().setStatusBarColor(BG);                   getWindow().setNavigationBarColor(BG);                   render();               }                int dp(int value) {                   return (int) (                       value * getResources()                           .getDisplayMetrics().density + 0.5f                   );               }                boolean isSamsung(String pkg) {                   return pkg != null &&                       pkg.startsWith("com.sec.android.app.sbrowser");               }                GradientDrawable background(int color) {                   GradientDrawable d = new GradientDrawable();                   d.setColor(color);                   d.setCornerRadius(dp(18));                   return d;               }                void label(                   LinearLayout parent,                   String value,                   int size,                   int color,                   boolean bold               ) {                   TextView t = new TextView(this);                   t.setText(value);                   t.setTextSize(size);                   t.setTextColor(color);                   t.setLineSpacing(dp(3), 1f);                    if (bold) {                       t.setTypeface(                           Typeface.DEFAULT,                           Typeface.BOLD                       );                   }                    LinearLayout.LayoutParams p =                       new LinearLayout.LayoutParams(-1, -2);                   p.bottomMargin = dp(9);                   parent.addView(t, p);               }                LinearLayout card(LinearLayout parent) {                   LinearLayout c = new LinearLayout(this);                   c.setOrientation(LinearLayout.VERTICAL);                   c.setPadding(dp(18), dp(18), dp(18), dp(18));                   c.setBackground(background(PANEL));                    LinearLayout.LayoutParams p =                       new LinearLayout.LayoutParams(-1, -2);                   p.bottomMargin = dp(15);                   parent.addView(c, p);                    return c;               }                void button(                   LinearLayout parent,                   String title,                   Runnable action               ) {                   Button b = new Button(this);      
+
+name: Criar APK NavegaClean S20
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+
+jobs:
+  compilar:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Preparar repositorio
+        uses: actions/checkout@v4
+
+      - name: Instalar Java 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Instalar Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Instalar Gradle
+        uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.7'
+
+      - name: Criar aplicativo Android
+        shell: bash
+        run: |
+          mkdir -p app/src/main/java/com/navegaclean/s20
+
+          cat > settings.gradle <<'EOF'
+          pluginManagement {
+              repositories {
+                  google()
+                  mavenCentral()
+                  gradlePluginPortal()
+              }
+          }
+          dependencyResolutionManagement {
+              repositories {
+                  google()
+                  mavenCentral()
+              }
+          }
+          rootProject.name = 'NavegaCleanS20'
+          include ':app'
+          EOF
+
+          cat > build.gradle <<'EOF'
+          plugins {
+              id 'com.android.application' version '8.6.1' apply false
+          }
+          EOF
+
+          cat > app/build.gradle <<'EOF'
+          plugins {
+              id 'com.android.application'
+          }
+
+          android {
+              namespace 'com.navegaclean.s20'
+              compileSdk 35
+
+              defaultConfig {
+                  applicationId 'com.navegaclean.s20'
+                  minSdk 29
+                  targetSdk 35
+                  versionCode 1
+                  versionName '1.0'
+              }
+
+              compileOptions {
+                  sourceCompatibility JavaVersion.VERSION_17
+                  targetCompatibility JavaVersion.VERSION_17
+              }
+          }
+          EOF
+
+          cat > app/src/main/AndroidManifest.xml <<'EOF'
+          <?xml version="1.0" encoding="utf-8"?>
+          <manifest xmlns:android="http://schemas.android.com/apk/res/android">
+
+              <queries>
+                  <intent>
+                      <action android:name="android.intent.action.VIEW"/>
+                      <category android:name="android.intent.category.BROWSABLE"/>
+                      <data android:scheme="https"/>
+                  </intent>
+
+                  <package android:name="com.android.chrome"/>
+                  <package android:name="org.mozilla.firefox"/>
+                  <package android:name="org.mozilla.focus"/>
+                  <package android:name="com.brave.browser"/>
+                  <package android:name="com.microsoft.emmx"/>
+                  <package android:name="com.opera.browser"/>
+                  <package android:name="com.opera.mini.native"/>
+                  <package android:name="com.vivaldi.browser"/>
+                  <package android:name="com.duckduckgo.mobile.android"/>
+                  <package android:name="com.kiwibrowser.browser"/>
+                  <package android:name="org.torproject.torbrowser"/>
+                  <package android:name="com.yandex.browser"/>
+              </queries>
+
+              <application
+                  android:label="NavegaClean S20"
+                  android:allowBackup="false"
+                  android:theme="@android:style/Theme.Material.NoActionBar">
+
+                  <activity
+                      android:name=".MainActivity"
+                      android:exported="true">
+
+                      <intent-filter>
+                          <action android:name="android.intent.action.MAIN"/>
+                          <category android:name="android.intent.category.LAUNCHER"/>
+                      </intent-filter>
+                  </activity>
+              </application>
+          </manifest>
+          EOF
+
+          cat > app/src/main/java/com/navegaclean/s20/MainActivity.java <<'EOF'
+          package com.navegaclean.s20;
+
+          import android.app.Activity;
+          import android.os.Bundle;
+          import android.content.Intent;
+          import android.content.pm.*;
+          import android.graphics.Color;
+          import android.graphics.Typeface;
+          import android.graphics.drawable.GradientDrawable;
+          import android.net.Uri;
+          import android.provider.Settings;
+          import android.view.View;
+          import android.widget.*;
+          import java.util.*;
+
+          public class MainActivity extends Activity {
+
+              final int BG = Color.rgb(10, 17, 24);
+              final int PANEL = Color.rgb(23, 34, 45);
+              final int GREEN = Color.rgb(49, 219, 157);
+              final int WHITE = Color.WHITE;
+              final int MUTED = Color.rgb(166, 182, 194);
+
+              final String[] known = {
+                  "com.android.chrome",
+                  "org.mozilla.firefox",
+                  "org.mozilla.focus",
+                  "com.brave.browser",
+                  "com.microsoft.emmx",
+                  "com.opera.browser",
+                  "com.opera.mini.native",
+                  "com.vivaldi.browser",
+                  "com.duckduckgo.mobile.android",
+                  "com.kiwibrowser.browser",
+                  "org.torproject.torbrowser",
+                  "com.yandex.browser"
+              };
+
+              static class Browser {
+                  String name;
+                  String pkg;
+                  String kind;
+
+                  Browser(String name, String pkg, String kind) {
+                      this.name = name;
+                      this.pkg = pkg;
+                      this.kind = kind;
+                  }
+              }
+
+              @Override
+              public void onCreate(Bundle b) {
+                  super.onCreate(b);
+                  getWindow().setStatusBarColor(BG);
+                  getWindow().setNavigationBarColor(BG);
+                  render();
+              }
+
+              int dp(int value) {
+                  return (int) (
+                      value * getResources()
+                          .getDisplayMetrics().density + 0.5f
+                  );
+              }
+
+              boolean isSamsung(String pkg) {
+                  return pkg != null &&
+                      pkg.startsWith("com.sec.android.app.sbrowser");
+              }
+
+              GradientDrawable background(int color) {
+                  GradientDrawable d = new GradientDrawable();
+                  d.setColor(color);
+                  d.setCornerRadius(dp(18));
+                  return d;
+              }
+
+              void label(
+                  LinearLayout parent,
+                  String value,
+                  int size,
+                  int color,
+                  boolean bold
+              ) {
+                  TextView t = new TextView(this);
+                  t.setText(value);
+                  t.setTextSize(size);
+                  t.setTextColor(color);
+                  t.setLineSpacing(dp(3), 1f);
+
+                  if (bold) {
+                      t.setTypeface(
+                          Typeface.DEFAULT,
+                          Typeface.BOLD
+                      );
+                  }
+
+                  LinearLayout.LayoutParams p =
+                      new LinearLayout.LayoutParams(-1, -2);
+                  p.bottomMargin = dp(9);
+                  parent.addView(t, p);
+              }
+
+              LinearLayout card(LinearLayout parent) {
+                  LinearLayout c = new LinearLayout(this);
+                  c.setOrientation(LinearLayout.VERTICAL);
+                  c.setPadding(dp(18), dp(18), dp(18), dp(18));
+                  c.setBackground(background(PANEL));
+
+                  LinearLayout.LayoutParams p =
+                      new LinearLayout.LayoutParams(-1, -2);
+                  p.bottomMargin = dp(15);
+                  parent.addView(c, p);
+
+                  return c;
+              }
+
+              void button(
+                  LinearLayout parent,
+                  String title,
+                  Runnable action
+              ) {
+                  Button b = new Button(this);
+                  b.setText(title);
+                  b.setAllCaps(false);
+                  b.setTextSize(14);
+                  b.setTextColor(BG);
+                  b.setTypeface(
+                      Typeface.DEFAULT, Typeface.BOLD
+                  );
+                  b.setBackground(background(GREEN));
+                  b.setOnClickListener(v -> action.run());
+
+                  LinearLayout.LayoutParams p =
+                      new LinearLayout.LayoutParams(-1, dp(52));
+                  p.topMargin = dp(10);
+                  parent.addView(b, p);
+              }
+
+              List<Browser> scan() {
+                  PackageManager pm = getPackageManager();
+
+                  LinkedHashMap<String, Browser> found =
+                      new LinkedHashMap<>();
+
+                  for (String pkg : known) {
+                      try {
+                          ApplicationInfo info =
+                              pm.getApplicationInfo(pkg, 0);
+
+                          if (!isSamsung(pkg)) {
+                              String name =
+                                  pm.getApplicationLabel(info)
+                                      .toString();
+
+                              found.put(pkg,
+                                  new Browser(
+                                      name, pkg, "Navegador conhecido"
+                                  )
+                              );
+                          }
+                      } catch (
+                          PackageManager.NameNotFoundException e
+                      ) {
+                          // Nao instalado ou nao visivel.
+                      }
+                  }
+
+                  Intent intent = new Intent(
+                      Intent.ACTION_VIEW,
+                      Uri.parse("https://example.com/")
+                  );
+
+                  intent.addCategory(
+                      Intent.CATEGORY_BROWSABLE
+                  );
+
+                  try {
+                      List<ResolveInfo> apps =
+                          pm.queryIntentActivities(
+                              intent,
+                              PackageManager.MATCH_DEFAULT_ONLY
+                          );
+
+                      for (ResolveInfo r : apps) {
+                          if (r.activityInfo == null) continue;
+
+                          String pkg =
+                              r.activityInfo.packageName;
+
+                          if (pkg == null ||
+                              pkg.equals(getPackageName()) ||
+                              isSamsung(pkg) ||
+                              found.containsKey(pkg)) {
+                              continue;
+                          }
+
+                          String name =
+                              r.loadLabel(pm).toString();
+
+                          found.put(pkg,
+                              new Browser(
+                                  name,
+                                  pkg,
+                                  "Possivel aplicativo de navegacao"
+                              )
+                          );
+                      }
+                  } catch (Exception ignored) {
+                  }
+
+                  List<Browser> list =
+                      new ArrayList<>(found.values());
+
+                  list.sort((a, b) ->
+                      a.name.compareToIgnoreCase(b.name)
+                  );
+
+                  return list;
+              }
+
+              void openSettings(String pkg) {
+                  if (isSamsung(pkg)) {
+                      Toast.makeText(
+                          this,
+                          "Samsung Internet protegido!",
+                          Toast.LENGTH_LONG
+                      ).show();
+                      return;
+                  }
+
+                  try {
+                      Intent i = new Intent(
+                          Settings.ACTION_APPLICATION_DETAILS_SETTINGS
+                      );
+                      i.setData(
+                          Uri.fromParts("package", pkg, null)
+                      );
+                      startActivity(i);
+                  } catch (Exception e) {
+                      Toast.makeText(
+                          this,
+                          "Falha ao abrir configuracoes",
+                          Toast.LENGTH_LONG
+                      ).show();
+                  }
+              }
+
+              void render() {
+                  ScrollView scroll = new ScrollView(this);
+                  scroll.setBackgroundColor(BG);
+                  scroll.setFillViewport(true);
+
+                  LinearLayout root =
+                      new LinearLayout(this);
+                  root.setOrientation(LinearLayout.VERTICAL);
+                  root.setPadding(
+                      dp(20), dp(32), dp(20), dp(32)
+                  );
+
+                  scroll.addView(root);
+                  setContentView(scroll);
+
+                  label(
+                      root,
+                      "NAVEGACLEAN S20",
+                      27,
+                      WHITE,
+                      true
+                  );
+
+                  label(
+                      root,
+                      "Central de privacidade do Galaxy S20 FE",
+                      14,
+                      MUTED,
+                      false
+                  );
+
+                  LinearLayout protection = card(root);
+
+                  label(
+                      protection,
+                      "✓ SAMSUNG INTERNET PROTEGIDO",
+                      17,
+                      GREEN,
+                      true
+                  );
+
+                  label(
+                      protection,
+                      "Este navegador fica fora de todas as "
+                      + "opcoes de limpeza do aplicativo.",
+                      14,
+                      WHITE,
+                      false
+                  );
+
+                  List<Browser> browsers = scan();
+
+                  LinearLayout summary = card(root);
+
+                  label(
+                      summary,
+                      "DETECCAO AUTOMATICA",
+                      15,
+                      GREEN,
+                      true
+                  );
+
+                  label(
+                      summary,
+                      browsers.size()
+                      + " aplicativos identificados",
+                      22,
+                      WHITE,
+                      true
+                  );
+
+                  label(
+                      summary,
+                      "Navegadores conhecidos e aplicativos "
+                      + "que conseguem abrir links.",
+                      13,
+                      MUTED,
+                      false
+                  );
+
+                  button(
+                      summary,
+                      "ATUALIZAR LISTA",
+                      () -> render()
+                  );
+
+                  label(
+                      root,
+                      "APLICATIVOS ENCONTRADOS",
+                      16,
+                      WHITE,
+                      true
+                  );
+
+                  if (browsers.isEmpty()) {
+                      LinearLayout empty = card(root);
+                      label(
+                          empty,
+                          "Nenhum outro navegador detectado.",
+                          14,
+                          MUTED,
+                          false
+                      );
+                  }
+
+                  for (Browser b : browsers) {
+                      LinearLayout item = card(root);
+
+                      label(
+                          item,
+                          b.name,
+                          19,
+                          WHITE,
+                          true
+                      );
+
+                      label(
+                          item,
+                          b.pkg,
+                          12,
+                          MUTED,
+                          false
+                      );
+
+                      label(
+                          item,
+                          b.kind,
+                          12,
+                          GREEN,
+                          false
+                      );
+
+                      button(
+                          item,
+                          "ABRIR OPCOES DE LIMPEZA",
+                          () -> openSettings(b.pkg)
+                      );
+                  }
+
+                  LinearLayout help = card(root);
+
+                  label(
+                      help,
+                      "COMO LIMPAR",
+                      16,
+                      GREEN,
+                      true
+                  );
+
+                  label(
+                      help,
+                      "1. Escolha o navegador.\n"
+                      + "2. Abra Armazenamento.\n"
+                      + "3. Toque em Limpar cache ou "
+                      + "Limpar dados.\n"
+                      + "4. Confirme a limpeza no Android.",
+                      14,
+                      WHITE,
+                      false
+                  );
+
+                  label(
+                      help,
+                      "Limpar dados pode apagar sessoes, "
+                      + "preferencias e arquivos locais. "
+                      + "Faca backup do que desejar guardar.",
+                      12,
+                      MUTED,
+                      false
+                  );
+
+                  LinearLayout limits = card(root);
+
+                  label(
+                      limits,
+                      "PRIVACIDADE DE REDE",
+                      16,
+                      GREEN,
+                      true
+                  );
+
+                  label(
+                      limits,
+                      "Este aplicativo nao apaga registros "
+                      + "armazenados em sites, operadoras "
+                      + "ou roteadores. O Android exige "
+                      + "confirmacao manual para apagar "
+                      + "os dados privados de outros apps.",
+                      13,
+                      MUTED,
+                      false
+                  );
+
+                  label(
+                      root,
+                      "NavegaClean S20 v1.0\n"
+                      + "Sem root - Sem coleta de dados",
+                      12,
+                      MUTED,
+                      false
+                  );
+              }
+          }
+          EOF
+
+      - name: Instalar ferramentas Android
+        run: |
+          sdkmanager "platforms;android-35" "build-tools;34.0.0"
+
+      - name: Compilar APK
+        run: |
+          gradle --no-daemon assembleDebug
+
+      - name: Disponibilizar APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: NavegaClean-S20-APK
+          path: app/build/outputs/apk/debug/app-debug.apk
+          if-no-files-found: error
